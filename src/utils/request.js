@@ -83,3 +83,33 @@ service.interceptors.response.use(
 )
 
 export default service
+/**
+ * 自动重试 3 次
+ *
+ * @param {*} url
+ * @param {*} options
+ * @param {number} [maxRetry=3]
+ */
+export function fetchWithRetry(url, options, maxRetry = 3) {
+  return new Promise((resolve, reject) => {
+    const doFetch = async (attempt) => {
+      try {
+        const response = await fetch(url, options);
+        if (response.ok) {
+          resolve(response);
+        } else {
+          throw new Error('Request failed');
+        }
+      } catch (error) {
+        if (attempt < maxRetry) {
+          console.log(`Attempt ${attempt + 1} failed. Retrying...`);
+          doFetch(attempt + 1);
+        } else {
+          reject(new Error('Max retries exceeded'));
+        }
+      }
+    };
+
+    doFetch(0);
+  });
+}
